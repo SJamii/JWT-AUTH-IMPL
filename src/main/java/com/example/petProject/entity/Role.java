@@ -28,10 +28,10 @@ public class Role {
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
-            name = "roles_privileges",
+            name = "roles_features",
             joinColumns = @JoinColumn(
                     name = "role_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(
-                    name = "id", referencedColumnName = "id"))
+                    name = "feature_id", referencedColumnName = "id"))
     private List<Feature> features = new ArrayList<>();
 }

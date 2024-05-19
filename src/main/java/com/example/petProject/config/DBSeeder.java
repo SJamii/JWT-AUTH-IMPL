@@ -2,7 +2,8 @@ package com.example.petProject.config;
 
 import com.example.petProject.entity.*;
 import com.example.petProject.entity.Module;
-import com.example.petProject.enums.ModuleName;
+import com.example.petProject.enums.FeatureEnum;
+import com.example.petProject.enums.ModuleEnum;
 import com.example.petProject.enums.UserType;
 import com.example.petProject.repository.*;
 import org.slf4j.Logger;
@@ -44,7 +45,7 @@ public class DBSeeder {
             logger.info("---------  Creating some module & features starts -----------");
             Module module = new Module();
             module.setModuleId(1L);
-            module.setModuleName(ModuleName.BOOK.getName());
+            module.setModuleName(ModuleEnum.BOOK.getName());
             module.setActive(Boolean.TRUE);
 
 //            Module author = new Module();
@@ -61,73 +62,58 @@ public class DBSeeder {
 
 
             Feature feature = new Feature();
-            feature.setFeatureId(1L);
-            feature.setFeatureName("book-view");
+            feature.setFeatureName(FeatureEnum.BOOK_VIEW.getName());
             feature.setPrivilegeType("BOOK_VIEW");
             feature.setActive(Boolean.TRUE);
-            feature.setUrl("/api/v1/book/{id}");
+//            feature.setUrl("/api/v1/book/{id}");
             feature.setModule(module);
 
             Feature feature2 = new Feature();
-            feature2.setFeatureId(2L);
-            feature2.setFeatureName("book-list-view");
+            feature2.setFeatureName(FeatureEnum.BOOK_LIST.getName());
             feature2.setPrivilegeType("BOOK_LIST_VIEW");
             feature2.setActive(Boolean.TRUE);
-            feature2.setUrl("/api/v1/book/list");
+//            feature2.setUrl("/api/v1/book/list");
             feature2.setModule(module);
 
             Feature feature3 = new Feature();
-            feature3.setFeatureId(3L);
-            feature3.setFeatureName("book-add");
+            feature3.setFeatureName(FeatureEnum.BOOK_ADD.getName());
             feature3.setPrivilegeType("BOOK_ADD");
             feature3.setActive(Boolean.TRUE);
-            feature3.setUrl("/api/v1/book/save");
+//            feature3.setUrl("/api/v1/book/save");
             feature3.setModule(module);
 
             Feature feature4 = new Feature();
-            feature4.setFeatureId(4L);
-            feature4.setPrivilegeType("BOOK_DELETE");
-            feature4.setFeatureName("book-delete");
+            feature4.setPrivilegeType(FeatureEnum.BOOK_DELETE.getName());
+            feature4.setFeatureName(FeatureEnum.BOOK_DELETE.getName());
             feature4.setActive(Boolean.TRUE);
-            feature4.setUrl("/api/v1/book/{id}");
+//            feature4.setUrl("/api/v1/book/{id}");
             feature4.setModule(module);
 
             Feature feature5 = new Feature();
-            feature5.setFeatureId(5L);
-            feature5.setFeatureName("book-update");
+            feature5.setFeatureName(FeatureEnum.BOOK_UPDATE.getName());
             feature5.setPrivilegeType("BOOK_UPDATE");
             feature5.setActive(Boolean.TRUE);
-            feature5.setUrl("/api/v1/book/update/{id}");
+//            feature5.setUrl("/api/v1/book/update/{id}");
             feature5.setModule(module);
 
 
 
-            Feature feature6 = new Feature();
-            feature6.setFeatureId(6L);
-            feature6.setFeatureName("author-update");
-            feature6.setPrivilegeType("AUTHOR_UPDATE");
+            /*Feature feature6 = new Feature();
+            feature6.setFeatureName("author-view");
+            feature6.setPrivilegeType("AUTHOR_VIEW");
             feature6.setActive(Boolean.TRUE);
             feature6.setUrl("/api/v1/book/author/{id}");
             feature6.setModule(module);
 
 
             Feature feature7 = new Feature();
-            feature7.setFeatureId(7L);
             feature7.setFeatureName("author-update");
             feature7.setPrivilegeType("AUTHOR_UPDATE");
             feature7.setActive(Boolean.TRUE);
             feature7.setUrl("/api/v1/book/author/{id}");
-            feature7.setModule(module);
+            feature7.setModule(module);*/
 
-
-
-            module.getFeatures().add(feature);
-            module.getFeatures().add(feature2);
-            module.getFeatures().add(feature3);
-            module.getFeatures().add(feature4);
-            module.getFeatures().add(feature5);
-            module.getFeatures().add(feature6);
-            module.getFeatures().add(feature7);
+            module.getFeatures().addAll(Arrays.asList(feature, feature2, feature3, feature4, feature5));
 
 
             moduleRepository.save(module);
