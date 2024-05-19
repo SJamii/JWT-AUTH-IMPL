@@ -40,13 +40,6 @@ public class User implements UserDetails {
     )
     private Set<Role> roles = new HashSet<>();
 
-//    @ManyToMany(fetch = FetchType.EAGER)
-//    @JoinTable(
-//            name = "UserPermissions",
-//            joinColumns = @JoinColumn(name = "userId"),
-//            inverseJoinColumns = @JoinColumn(name = "featureId")
-//    )
-//    private Set<Feature> permissions = new HashSet<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -65,6 +58,7 @@ public class User implements UserDetails {
         roles.forEach(role -> {
             // Convert each permission to a GrantedAuthority and add to authorities list
             List<GrantedAuthority> roleAuthorities = role.getFeatures().stream()
+                    .filter(Feature::isActive)
                     .map(permission -> new SimpleGrantedAuthority(permission.getPrivilegeType()))
                     .collect(Collectors.toList());
             authorities.addAll(roleAuthorities);

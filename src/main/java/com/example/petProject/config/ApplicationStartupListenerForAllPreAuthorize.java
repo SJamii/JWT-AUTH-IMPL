@@ -3,11 +3,14 @@ package com.example.petProject.config;
 
 import com.example.petProject.constants.Constants;
 import com.example.petProject.customAnnotation.ModuleAndDependentModule;
+import com.example.petProject.customAnnotation.ModuleName;
 import com.example.petProject.entity.Feature;
 import com.example.petProject.entity.Module;
-import com.example.petProject.enums.ModuleName;
+import com.example.petProject.enums.FeatureEnum;
+import com.example.petProject.enums.ModuleEnum;
 import com.example.petProject.repository.FeatureRepository;
 import com.example.petProject.repository.ModuleRepository;
+import com.example.petProject.service.FeatureService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -21,19 +24,20 @@ import java.util.*;
 
 
 @Component
-public class ApplicationStartupListnerForAllPreAuthorize implements ApplicationListener<ApplicationReadyEvent> {
+public class ApplicationStartupListenerForAllPreAuthorize implements ApplicationListener<ApplicationReadyEvent> {
 
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
     private final ModuleRepository moduleRepository;
     private final FeatureRepository featureRepository;
-
+    private final FeatureService featureService;
 //    private final List<Module> moduleList = new ArrayList<>();
 //    private final List<Feature> featureList = new ArrayList<>();
 
-    public ApplicationStartupListnerForAllPreAuthorize(ModuleRepository moduleRepository,
-                                                       FeatureRepository featureRepository) {
+    public ApplicationStartupListenerForAllPreAuthorize(ModuleRepository moduleRepository,
+                                                        FeatureRepository featureRepository, FeatureService featureService) {
         this.moduleRepository = moduleRepository;
         this.featureRepository = featureRepository;
+        this.featureService = featureService;
     }
 
 
@@ -43,6 +47,7 @@ public class ApplicationStartupListnerForAllPreAuthorize implements ApplicationL
 
         List<PreAuthorizeInfo> preAuthMethods = null;
         try {
+            GlobalValue.featureListWithName = featureRepository.getAllFeature();
             preAuthMethods = findPreAuthorizeMethods(packageName);
         } catch (ClassNotFoundException e) {
             logger.error("---- Error ----- ", e.getException());
@@ -55,24 +60,10 @@ public class ApplicationStartupListnerForAllPreAuthorize implements ApplicationL
         }
 
         // let's try deleting
-//        Optional<Feature> feature = Optional.ofNullable(featureRepository.findById(6L));
-       /* Optional<Feature> feature = Optional.ofNullable(featureRepository.findById(1L));
-        if (feature.isPresent()) {
-            Feature featureObj = feature.get();
-            List<Feature> temp = featureObj.getDependsOnFeature();
-            if(temp.size() > 1) {
-                logger.info("Found multiple dependencies on feature!! Not Possible To Delete");
-            } else {
-               *//* for(Feature f : featureObj.getDependsOnFeature()) {
-                    f.getDependsOnFeature().remove(feature.get());
-                }*//*
-//                featureObj.getDependsOnFeature().clear();
-//                featureObj.getDependsOnFeature().remove(featureObj.getDependsOnFeature());
-//                featureRepository.delete(featureObj);
-            }
-        }
-*/
+        featureService.deleteFeature(1L);
 
+//        featureService.deleteFeature(1L);
+//        featureService.deleteFeature(6L);
 
     }
 
@@ -82,7 +73,6 @@ public class ApplicationStartupListnerForAllPreAuthorize implements ApplicationL
         }
         // Split the string at the opening and closing parenthesis
         String[] parts = preauthorizeValue.split("('|'\\))");
-
         return parts[1];
     }
 
@@ -91,6 +81,10 @@ public class ApplicationStartupListnerForAllPreAuthorize implements ApplicationL
 
         Class<?>[] classes = getClasses(packageName);
         for (Class<?> clazz : classes) {
+            ModuleEnum classLevelModuleName = null;
+            if(clazz.isAnnotationPresent(ModuleName.class)) {
+                classLevelModuleName = clazz.getAnnotation(ModuleName.class).name();
+            }
             Method[] methods = clazz.getDeclaredMethods();
             for (Method method : methods) {
                 String featureName = null;
@@ -99,40 +93,31 @@ public class ApplicationStartupListnerForAllPreAuthorize implements ApplicationL
                     featureName = preAuth.value();
                     preAuthMethods.add(new PreAuthorizeInfo(method, featureName));
                 }
-                ModuleName[] dependentModule = null;
-                ModuleName moduleName = null;
+                FeatureEnum[] dependentFeatures = null;
+                ModuleEnum methodLevelModuleName = null;
+                boolean isInternal = false;
                 if (method.isAnnotationPresent(ModuleAndDependentModule.class)) {
                     ModuleAndDependentModule dependentModuleAnnotation = method.getAnnotation(ModuleAndDependentModule.class);
-                    moduleName = dependentModuleAnnotation.moduleName();
-                    dependentModule = dependentModuleAnnotation.dependentModules();
+                    methodLevelModuleName = dependentModuleAnnotation.moduleName().getName() == ModuleEnum.EMPTY.getName() ? classLevelModuleName : dependentModuleAnnotation.moduleName();
+                    dependentFeatures = dependentModuleAnnotation.dependentFeatures();
+                    isInternal = dependentModuleAnnotation.isInternal();
                 }
-                if(featureName != null && moduleName != null && dependentModule != null) {
-                    seedDataToFeatureAndModuleTable(extractPermission(featureName), moduleName, dependentModule);
+                if(featureName != null && methodLevelModuleName != null && dependentFeatures != null) {
+                    seedDataToFeatureAndModuleTable(extractPermission(featureName),
+                            methodLevelModuleName,
+                            dependentFeatures, isInternal);
                 }
             }
         }
         return preAuthMethods;
     }
 
-    private void seedDataToFeatureAndModuleTable(String featureName, ModuleName moduleName, ModuleName[] dependentModules) {
-        //module
-        if(featureName != null) {
+    private void seedDataToFeatureAndModuleTable(String featureName, ModuleEnum moduleName, FeatureEnum[] dependentFeatures, boolean isInternal) {
+        if(featureName != null && !GlobalValue.featureListWithName.contains(featureName)) {
             Module module = new Module();
             module.setModuleName(moduleName.getName());
             module.setActive(Boolean.TRUE);
-            List<Module> parentModules = new ArrayList<>();
-
-            for(ModuleName dependentModule : dependentModules) {
-                Optional<Module> optionalModule = Optional.ofNullable(moduleRepository.findByModuleName(dependentModule.getName()));
-                if (optionalModule.isPresent()) {
-                    parentModules.add(optionalModule.get());
-//                Module parentModule = optionalModule.get();
-                }
-            }
-            module.setSubmodules(parentModules);
             moduleRepository.save(module);
-
-
 
             //feature
             Feature feature = new Feature();
@@ -140,11 +125,11 @@ public class ApplicationStartupListnerForAllPreAuthorize implements ApplicationL
             feature.setActive(Boolean.TRUE);
             feature.setPrivilegeType(featureName);
             feature.setModule(module);
+            feature.setInternal(isInternal);
             featureRepository.save(feature);
-
-
-
-
+            featureService.addDependency(dependentFeatures, feature);
+            module.getFeatures().add(feature);
+//            moduleRepository.save(module);
         }
     }
 

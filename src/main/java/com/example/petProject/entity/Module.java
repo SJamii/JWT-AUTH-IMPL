@@ -1,6 +1,5 @@
 package com.example.petProject.entity;
 
-import com.example.petProject.enums.ModuleName;
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

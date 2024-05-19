@@ -1,7 +1,7 @@
 package com.example.petProject.enums;
 
-public enum ModuleName {
-    BOOK(),AUTHOR(),PUBLISHER();
+public enum ModuleEnum {
+    BOOK(),AUTHOR(),PUBLISHER(), EMPTY();
 //    private String label;
 
    /* ModuleName(String label) {
